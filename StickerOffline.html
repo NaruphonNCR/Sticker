@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>พิมพ์สติ๊กเกอร์ยา หน่วยแพทย์เคลื่อนที่</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style id="pageStyle"></style>
+<style>
+:root{
+  --bg:#eef2f0; --panel:#ffffff; --ink:#1d2a2f; --muted:#5b6b70; --line:#d3dcd8;
+  --brand:#0f6e5a; --brand-ink:#ffffff; --brand-soft:#dcefe8; --warn:#b3261e; --field:#f8faf9;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121a18; --panel:#1b2522; --ink:#e3ebe8; --muted:#9aaba5; --line:#2e3d39;
+    --brand:#4fbf9f; --brand-ink:#0b1714; --brand-soft:#1f3a32; --warn:#ff8a80; --field:#16201d;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121a18; --panel:#1b2522; --ink:#e3ebe8; --muted:#9aaba5; --line:#2e3d39;
+  --brand:#4fbf9f; --brand-ink:#0b1714; --brand-soft:#1f3a32; --warn:#ff8a80; --field:#16201d;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Sarabun",Tahoma,"Leelawadee UI",sans-serif;font-size:16px;line-height:1.5}
+header{background:var(--brand);color:var(--brand-ink);padding:14px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between}
+header h1{margin:0;font-size:1.3rem;font-weight:700}
+header .sub{font-size:.9rem;opacity:.85}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{background:transparent;color:var(--brand-ink);border:1px solid color-mix(in srgb,var(--brand-ink) 40%,transparent);padding:6px 14px;border-radius:999px;font:inherit;cursor:pointer}
+nav button.on{background:var(--brand-ink);color:var(--brand);font-weight:600}
+main{max-width:1200px;margin:0 auto;padding:16px}
+.tab{display:none}.tab.on{display:block}
+.grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:16px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+section.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+section.box h2{margin:0 0 12px;font-size:1.1rem}
+label{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:7px 9px}
+textarea{resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+.row{display:grid;gap:10px;margin-bottom:10px}
+.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}.c4{grid-template-columns:2fr 1fr 1fr 1fr}
+@media (max-width:560px){.c3,.c4{grid-template-columns:1fr 1fr}}
+.btn{font:inherit;border:1px solid var(--brand);background:var(--brand);color:var(--brand-ink);padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600}
+.btn.ghost{background:transparent;color:var(--brand)}
+.btn.danger{background:transparent;border-color:var(--warn);color:var(--warn)}
+.btn.small{padding:3px 10px;font-size:.85rem;font-weight:500}
+.btn.big{font-size:1.1rem;padding:10px 22px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:999px;padding:2px 10px;cursor:pointer}
+.chip:hover{border-color:var(--brand);color:var(--brand)}
+.hint{font-size:.85rem;color:var(--muted)}
+.queue{list-style:none;padding:0;margin:0}
+.queue li{display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid var(--line);padding:8px 0}
+.queue li .q{flex:1;min-width:0}
+.queue .n{font-weight:600}
+.empty{color:var(--muted);text-align:center;padding:18px 8px;border:1px dashed var(--line);border-radius:8px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600;white-space:nowrap}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 18px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+.toast.show{opacity:1}
+.previewWrap{background:repeating-linear-gradient(45deg,var(--field),var(--field) 8px,var(--bg) 8px,var(--bg) 16px);border-radius:8px;padding:18px;display:flex;justify-content:center;overflow-x:auto}
+
+/* ---------- sticker (fixed colors, prints on white) ---------- */
+.sticker{background:#fff;color:#000;font-family:"Sarabun",Tahoma,sans-serif;overflow:hidden;display:flex;flex-direction:column;padding:1.2mm 2.5mm;line-height:1.3;box-shadow:0 1px 4px rgba(0,0,0,.25);flex:none}
+.sticker .top{display:flex;justify-content:space-between;gap:2mm;border-bottom:.3mm solid #000;padding-bottom:.8mm;font-size:.85em}
+.sticker .top b{font-weight:700}
+.sticker .pt{font-size:.95em;margin-top:.5mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sticker .drug{display:flex;justify-content:space-between;gap:2mm;align-items:baseline;margin-top:.4mm}
+.sticker .dn{font-weight:700;font-size:1.2em;white-space:nowrap;overflow:hidden;min-width:0}
+.sticker .qty{font-weight:700;white-space:nowrap}
+.sticker .use{font-weight:600;font-size:1.12em;margin-top:1mm;flex:1}
+.sticker .ind{font-size:.9em;margin-top:.5mm}
+.sticker .wn{font-size:.9em;font-weight:700;border-top:.2mm dashed #000;padding-top:.4mm;margin-top:.4mm}
+.sticker .ft{font-size:.75em;text-align:right;color:#333}
+
+#printArea{display:none}
+@media print{
+  body{background:#fff}
+  body > *:not(#printArea){display:none !important}
+  #printArea{display:block}
+  .sticker{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>💊 พิมพ์สติ๊กเกอร์ยา</h1>
+    <div class="sub" id="hdrUnit">หน่วยแพทย์เคลื่อนที่</div>
+  </div>
+  <nav>
+    <button data-tab="t-print" class="on">พิมพ์สติ๊กเกอร์</button>
+    <button data-tab="t-drugs">รายการยา</button>
+    <button data-tab="t-set">ตั้งค่า</button>
+  </nav>
+</header>
+
+<main>
+<!-- ================= PRINT TAB ================= -->
+<div class="tab on" id="t-print">
+  <div class="grid">
+    <div>
+      <section class="box">
+        <h2>ผู้รับบริการ</h2>
+        <div class="row c3">
+          <div style="grid-column:span 2"><label for="ptName">ชื่อ-สกุล</label><input id="ptName" placeholder="เช่น นายสมชาย ใจดี"></div>
+          <div><label for="ptDate">วันที่จ่ายยา</label><input id="ptDate" type="date"></div>
+        </div>
+        <div class="row c2">
+          <div><label for="ptHn">HN / เลขบัตร (ถ้ามี)</label><input id="ptHn"></div>
+          <div><label for="ptAge">อายุ (ถ้ามี)</label><input id="ptAge" placeholder="เช่น 45 ปี"></div>
+        </div>
+      </section>
+
+      <section class="box">
+        <h2>เลือกยา</h2>
+        <div class="row">
+          <div>
+            <label for="drugPick">ค้นหาชื่อยา (พิมพ์บางส่วนได้)</label>
+            <input id="drugPick" list="drugList" placeholder="พิมพ์ชื่อยา แล้วเลือกจากรายการ" autocomplete="off">
+            <datalist id="drugList"></datalist>
+          </div>
+        </div>
+        <div class="row c4">
+          <div><label for="fName">ชื่อยาบนสติ๊กเกอร์</label><input id="fName"></div>
+          <div><label for="fQty">จำนวน</label><input id="fQty" type="number" min="0"></div>
+          <div><label for="fUnit">หน่วย</label><input id="fUnit" placeholder="เม็ด"></div>
+          <div><label for="fCopies">จำนวนดวง</label><input id="fCopies" type="number" min="1" value="1"></div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="fUse">วิธีใช้</label>
+            <textarea id="fUse" rows="2"></textarea>
+            <div class="chips" id="useChips"></div>
+          </div>
+        </div>
+        <div class="row c2">
+          <div><label for="fInd">ข้อบ่งใช้</label><input id="fInd" placeholder="เช่น บรรเทาปวด ลดไข้"></div>
+          <div><label for="fWarn">คำเตือน</label><input id="fWarn" placeholder="เช่น อาจทำให้ง่วงซึม"></div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="addQueue">เพิ่มลงคิวพิมพ์</button>
+          <button class="btn ghost" id="clearForm">ล้างช่องกรอก</button>
+        </div>
+      </section>
+    </div>
+
+    <div>
+      <section class="box">
+        <h2>ตัวอย่างสติ๊กเกอร์</h2>
+        <div class="previewWrap"><div id="preview"></div></div>
+        <p class="hint" id="sizeHint"></p>
+      </section>
+      <section class="box">
+        <h2>คิวพิมพ์ <span id="qCount" class="hint"></span></h2>
+        <ul class="queue" id="queue"></ul>
+        <div class="actions" style="margin-top:12px">
+          <button class="btn big" id="printBtn">🖨️ พิมพ์ทั้งหมด</button>
+          <button class="btn danger" id="clearQueue">ล้างคิว (คนถัดไป)</button>
+        </div>
+        <p class="hint">ถ้ากดพิมพ์แล้วไม่มีหน้าต่างขึ้น ให้เปิดหน้านี้ในแท็บใหม่ แล้วกด Ctrl+P (Mac: ⌘+P)</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ================= DRUGS TAB ================= -->
+<div class="tab" id="t-drugs">
+  <section class="box">
+    <h2>นำเข้ารายการยา</h2>
+    <p class="hint">ใช้ไฟล์ Excel (.xlsx) หรือ CSV แถวแรกเป็นหัวคอลัมน์ ตามตัวอย่างนี้ (คอลัมน์ที่จำเป็นมีแค่ “ชื่อยา”)</p>
+    <div class="tablewrap" style="margin-bottom:12px">
+      <table>
+        <tr><th>ชื่อยา</th><th>ความแรง</th><th>หน่วย</th><th>จำนวน</th><th>วิธีใช้</th><th>ข้อบ่งใช้</th><th>คำเตือน</th></tr>
+        <tr><td>Paracetamol</td><td>500 mg</td><td>เม็ด</td><td>10</td><td>รับประทานครั้งละ 1 เม็ด ทุก 4-6 ชั่วโมง เวลาปวดหรือมีไข้</td><td>บรรเทาปวด ลดไข้</td><td>ไม่ควรกินเกิน 8 เม็ดต่อวัน</td></tr>
+      </table>
+    </div>
+    <div class="row c2">
+      <div><label for="fileIn">เลือกไฟล์ Excel / CSV</label><input type="file" id="fileIn" accept=".xlsx,.xls,.csv"></div>
+      <div>
+        <label for="importMode">วิธีนำเข้า</label>
+        <select id="importMode"><option value="append">เพิ่มต่อจากรายการเดิม (ชื่อซ้ำจะถูกอัปเดต)</option><option value="replace">แทนที่รายการเดิมทั้งหมด</option></select>
+      </div>
+    </div>
+    <details>
+      <summary class="hint" style="cursor:pointer">หรือคัดลอกจาก Excel แล้ววางที่นี่</summary>
+      <textarea id="pasteIn" rows="5" style="margin-top:8px" placeholder="เลือกตารางใน Excel (รวมแถวหัวคอลัมน์) กด Ctrl+C แล้ววางที่นี่"></textarea>
+      <button class="btn small" id="pasteBtn" style="margin-top:6px">นำเข้าจากข้อความที่วาง</button>
+    </details>
+  </section>
+
+  <section class="box">
+    <h2 id="drugFormTitle">เพิ่มยาทีละรายการ</h2>
+    <div class="row c4">
+      <div><label for="dName">ชื่อยา</label><input id="dName"></div>
+      <div><label for="dStr">ความแรง</label><input id="dStr"></div>
+      <div><label for="dUnit">หน่วย</label><input id="dUnit"></div>
+      <div><label for="dQty">จำนวนเริ่มต้น</label><input id="dQty" type="number" min="0"></div>
+    </div>
+    <div class="row"><div><label for="dUse">วิธีใช้</label><input id="dUse"></div></div>
+    <div class="row c2">
+      <div><label for="dInd">ข้อบ่งใช้</label><input id="dInd"></div>
+      <div><label for="dWarn">คำเตือน</label><input id="dWarn"></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="saveDrug">บันทึกยา</button>
+      <button class="btn ghost" id="cancelDrug">ล้าง</button>
+    </div>
+  </section>
+
+  <section class="box">
+    <div class="actions" style="justify-content:space-between;margin-bottom:10px">
+      <h2 style="margin:0">รายการยาทั้งหมด <span class="hint" id="dCount"></span></h2>
+      <div class="actions">
+        <input id="dSearch" placeholder="ค้นหา" style="width:180px">
+        <button class="btn small ghost" id="copyAll">คัดลอกทั้งหมด (ไปวางใน Excel)</button>
+        <button class="btn small danger" id="resetSample">คืนค่ายาตัวอย่าง</button>
+      </div>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>ชื่อยา</th><th>ความแรง</th><th>จำนวน</th><th>วิธีใช้</th><th>ข้อบ่งใช้</th><th>คำเตือน</th><th></th></tr></thead>
+        <tbody id="drugTable"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- ================= SETTINGS TAB ================= -->
+<div class="tab" id="t-set">
+  <section class="box">
+    <h2>ข้อมูลบนสติ๊กเกอร์</h2>
+    <div class="row c2">
+      <div><label for="sUnit">ชื่อหน่วยงาน / หน่วยแพทย์</label><input id="sUnit"></div>
+      <div><label for="sPlace">สถานที่ออกหน่วย</label><input id="sPlace" placeholder="เช่น วัดบ้านนา ม.3"></div>
+    </div>
+    <div class="row c2">
+      <div><label for="sPharm">ผู้จ่ายยา</label><input id="sPharm" placeholder="เช่น ภก.นฤพนธ์"></div>
+      <div><label for="sPhone">เบอร์ติดต่อ</label><input id="sPhone"></div>
+    </div>
+  </section>
+  <section class="box">
+    <h2>ขนาดสติ๊กเกอร์และการพิมพ์</h2>
+    <div class="row c3">
+      <div>
+        <label for="sPreset">ขนาดสำเร็จรูป</label>
+        <select id="sPreset">
+          <option value="100x74">100 × 74 มม. (10 × 7.4 ซม.)</option>
+          <option value="85x48">85 × 48 มม.</option>
+          <option value="50x30">50 × 30 มม.</option>
+          <option value="60x40">60 × 40 มม.</option>
+          <option value="70x50">70 × 50 มม.</option>
+          <option value="80x50">80 × 50 มม.</option>
+          <option value="100x50">100 × 50 มม.</option>
+          <option value="custom">กำหนดเอง</option>
+        </select>
+      </div>
+      <div><label for="sW">กว้าง (มม.)</label><input id="sW" type="number" min="20"></div>
+      <div><label for="sH">สูง (มม.)</label><input id="sH" type="number" min="15"></div>
+    </div>
+    <div class="row c2">
+      <div>
+        <label for="sMode">รูปแบบการพิมพ์</label>
+        <select id="sMode">
+          <option value="label">เครื่องพิมพ์สติ๊กเกอร์ม้วน (1 ดวงต่อหน้า)</option>
+          <option value="a4">กระดาษ A4 (เรียงหลายดวง)</option>
+        </select>
+      </div>
+      <div><label for="sFont">ขนาดตัวอักษร (%)</label><input id="sFont" type="number" min="60" max="160" step="5"></div>
+    </div>
+    <div class="row c2">
+      <div><label for="sTop">ขอบบนของสติ๊กเกอร์ (มม.)</label><input id="sTop" type="number" min="0" max="40" step="0.5"></div>
+      <div></div>
+    </div>
+    <p class="hint">เครื่องพิมพ์ความร้อน (เช่น Xprinter, Zebra, TSC) ให้ตั้งขนาดกระดาษในไดรเวอร์ให้ตรงกับขนาดที่เลือก และตั้ง Margins เป็น None ตอนสั่งพิมพ์</p>
+    <div class="actions"><button class="btn" id="saveSet">บันทึกการตั้งค่า</button></div>
+  </section>
+  <section class="box">
+    <h2>ข้อความวิธีใช้สำเร็จรูป</h2>
+    <p class="hint">หนึ่งบรรทัดต่อหนึ่งปุ่ม ใช้กดเติมข้อความในช่องวิธีใช้ได้เร็วขึ้น</p>
+    <textarea id="sChips" rows="8"></textarea>
+    <div class="actions" style="margin-top:8px"><button class="btn" id="saveChips">บันทึกข้อความ</button></div>
+  </section>
+  <p class="hint">ข้อมูลทั้งหมดเก็บไว้ในเบราว์เซอร์ของเครื่องนี้เท่านั้น ถ้าเปลี่ยนเครื่องให้นำเข้ารายการยาใหม่</p>
+</div>
+</main>
+
+<div id="printArea"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const KEY = 'drugSticker.v1';
+
+const SAMPLE = [
+ ['Paracetamol','500 mg','เม็ด',10,'รับประทานครั้งละ 1-2 เม็ด ทุก 4-6 ชั่วโมง เวลาปวดหรือมีไข้','บรรเทาปวด ลดไข้','ไม่ควรกินเกิน 8 เม็ดต่อวัน'],
+ ['Chlorpheniramine (CPM)','4 mg','เม็ด',10,'รับประทานครั้งละ 1 เม็ด วันละ 3 ครั้ง หลังอาหาร','แก้แพ้ ลดน้ำมูก','อาจทำให้ง่วงซึม ห้ามขับขี่'],
+ ['Loratadine','10 mg','เม็ด',10,'รับประทานครั้งละ 1 เม็ด วันละ 1 ครั้ง','แก้แพ้ ผื่นคัน',''],
+ ['Amoxicillin','500 mg','แคปซูล',15,'รับประทานครั้งละ 1 แคปซูล วันละ 3 ครั้ง หลังอาหาร','ยาปฏิชีวนะ','รับประทานติดต่อกันจนหมด'],
+ ['Ibuprofen','400 mg','เม็ด',10,'รับประทานครั้งละ 1 เม็ด วันละ 3 ครั้ง หลังอาหารทันที','แก้ปวด ลดอักเสบ','ห้ามกินตอนท้องว่าง'],
+ ['Antacid','','เม็ด',20,'เคี้ยวครั้งละ 1-2 เม็ด วันละ 3 ครั้ง หลังอาหาร','ลดกรด แก้ท้องอืด',''],
+ ['Simethicone','80 mg','เม็ด',10,'เคี้ยวครั้งละ 1 เม็ด วันละ 3 ครั้ง หลังอาหาร','แก้ท้องอืด ขับลม',''],
+ ['Dimenhydrinate','50 mg','เม็ด',6,'รับประทานครั้งละ 1 เม็ด ก่อนเดินทาง 30 นาที','แก้เมารถ คลื่นไส้','อาจทำให้ง่วงซึม'],
+ ['ORS ผงเกลือแร่','','ซอง',5,'ละลายน้ำต้มสุก 1 แก้ว (200 ml) จิบบ่อยๆ','ทดแทนน้ำและเกลือแร่','ผสมแล้วใช้ภายใน 24 ชั่วโมง'],
+ ['Vitamin B complex','','เม็ด',30,'รับประทานครั้งละ 1 เม็ด วันละ 1 ครั้ง หลังอาหาร','บำรุงร่างกาย',''],
+ ['Calamine lotion','60 ml','ขวด',1,'เขย่าขวด ทาบริเวณที่คัน วันละ 2-3 ครั้ง','บรรเทาอาการคัน','ใช้ภายนอก ห้ามรับประทาน'],
+ ['Povidone iodine','15 ml','ขวด',1,'ทาแผลวันละ 1-2 ครั้ง','ใส่แผล ฆ่าเชื้อ','ใช้ภายนอก ห้ามรับประทาน'],
+ ['Analgesic balm','','หลอด',1,'ทาถูนวดบริเวณที่ปวด วันละ 2-3 ครั้ง','บรรเทาปวดกล้ามเนื้อ','ใช้ภายนอก ห้ามทาแผลเปิด'],
+].map(r=>({name:r[0],strength:r[1],unit:r[2],qty:r[3],usage:r[4],indication:r[5],warning:r[6]}));
+
+const DEFAULT_CHIPS = [
+ 'รับประทานครั้งละ 1 เม็ด วันละ 3 ครั้ง หลังอาหาร เช้า กลางวัน เย็น',
+ 'รับประทานครั้งละ 1 เม็ด วันละ 2 ครั้ง หลังอาหาร เช้า เย็น',
+ 'รับประทานครั้งละ 1 เม็ด วันละ 1 ครั้ง หลังอาหารเช้า',
+ 'รับประทานครั้งละ 1 เม็ด ก่อนนอน',
+ 'รับประทานก่อนอาหาร 30 นาที',
+ 'เวลาปวดหรือมีไข้ ทุก 4-6 ชั่วโมง',
+ 'ใช้ภายนอก ห้ามรับประทาน',
+ 'รับประทานติดต่อกันจนหมด',
+];
+
+let st = {
+  drugs: SAMPLE.slice(),
+  settings:{unit:'หน่วยแพทย์เคลื่อนที่',place:'',pharm:'',phone:'',w:100,h:74,top:10,mode:'label',font:100,sz:'z100x74'},
+  chips: DEFAULT_CHIPS.slice(),
+  queue: []
+};
+try{
+  const raw = localStorage.getItem(KEY);
+  if(raw){ const s = JSON.parse(raw); st = {...st, ...s, settings:{...st.settings, ...(s.settings||{})}}; }
+  if(st.settings.top==null) st.settings.top=10;
+  if(st.settings.sz!=='z100x74'){ st.settings.w=100; st.settings.h=74; st.settings.mode='label'; st.settings.sz='z100x74'; }
+}catch(e){}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(st)); }catch(e){} }
+
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2000); }
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id===b.dataset.tab));
+});
+
+/* ---------- helpers ---------- */
+const label = d => d.name + (d.strength ? ' ' + d.strength : '');
+function thaiDate(iso){
+  if(!iso) return '';
+  const [y,m,d] = iso.split('-').map(Number);
+  const mo = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][m-1];
+  return `${d} ${mo} ${String(y+543).slice(-2)}`;
+}
+function todayIso(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
+
+/* ---------- sticker ---------- */
+function stickerHTML(it, pt){
+  const s = st.settings;
+  const avail = Math.max(10, s.h - (s.top??0));
+  const fs = Math.max(6.5, Math.min(s.w*0.175, avail*0.30)) * (s.font/100);
+  const ptLine = [pt.name, pt.age, pt.hn ? 'HN ' + pt.hn : ''].filter(Boolean).join('  ');
+  const foot = [s.place, s.pharm, s.phone ? 'โทร ' + s.phone : ''].filter(Boolean).join(' | ');
+  return `<div class="sticker" style="width:${s.w}mm;height:${s.h}mm;padding-top:${(s.top??10)}mm;font-size:${fs.toFixed(1)}pt">
+    <div class="top"><b>${esc(s.unit)}</b><span>${esc(thaiDate(pt.date))}</span></div>
+    <div class="pt">${esc(ptLine || 'ชื่อผู้ป่วย ..............................')}</div>
+    <div class="drug"><span class="dn">${esc(it.name || 'ชื่อยา')}</span><span class="qty">${it.qty!==''&&it.qty!=null ? '#'+esc(it.qty)+' '+esc(it.unit) : ''}</span></div>
+    <div class="use">${esc(it.usage)}</div>
+    ${it.indication ? `<div class="ind">ข้อบ่งใช้: ${esc(it.indication)}</div>` : ''}
+    ${it.warning ? `<div class="wn">⚠ ${esc(it.warning)}</div>` : ''}
+    ${foot ? `<div class="ft">${esc(foot)}</div>` : ''}
+  </div>`;
+}
+function fitNames(root){
+  root.querySelectorAll('.sticker').forEach(st0=>{
+    const el = st0.querySelector('.dn'); if(!el) return;
+    const row = el.parentElement, qty = row.querySelector('.qty');
+    const avail = row.clientWidth - (qty ? qty.offsetWidth : 0) - 10;
+    if(avail <= 0) return;
+    let size = 1.2;
+    el.style.fontSize = size + 'em';
+    let guard = 40;
+    while(el.scrollWidth > avail && size > 0.62 && guard-- > 0){
+      size -= 0.025; el.style.fontSize = size.toFixed(3) + 'em';
+    }
+  });
+}
+function patient(){ return {name:$('ptName').value.trim(),hn:$('ptHn').value.trim(),age:$('ptAge').value.trim(),date:$('ptDate').value}; }
+function formItem(){
+  return {name:$('fName').value.trim(),qty:$('fQty').value,unit:$('fUnit').value.trim(),usage:$('fUse').value.trim(),
+          indication:$('fInd').value.trim(),warning:$('fWarn').value.trim(),copies:Math.max(1,parseInt($('fCopies').value)||1)};
+}
+function renderPreview(){
+  const it = formItem();
+  const show = it.name ? it : (st.queue[st.queue.length-1] || it);
+  $('preview').innerHTML = stickerHTML(show, patient());
+  fitNames($('preview'));
+  $('sizeHint').textContent = `ขนาด ${st.settings.w} × ${st.settings.h} มม. • ขอบบน ${st.settings.top??10} มม. • ${st.settings.mode==='a4'?'พิมพ์ลง A4':'พิมพ์ลงสติ๊กเกอร์ม้วน'} (เปลี่ยนได้ที่แท็บตั้งค่า)`;
+}
+
+/* ---------- print tab ---------- */
+function renderDatalist(){
+  $('drugList').innerHTML = st.drugs.map(d=>`<option value="${esc(label(d))}">${esc(d.indication||'')}</option>`).join('');
+}
+function renderChips(){
+  $('useChips').innerHTML = st.chips.map((c,i)=>`<button class="chip" data-i="${i}" type="button">${esc(c)}</button>`).join('');
+}
+$('useChips').onclick = e=>{
+  const b = e.target.closest('.chip'); if(!b) return;
+  const t = st.chips[b.dataset.i]; const f = $('fUse');
+  f.value = f.value.trim() ? f.value.trim() + ' ' + t : t;
+  renderPreview();
+};
+$('drugPick').addEventListener('input', ()=>{
+  const v = $('drugPick').value.trim();
+  const d = st.drugs.find(x=>label(x)===v);
+  if(!d) return;
+  $('fName').value = label(d); $('fQty').value = d.qty ?? ''; $('fUnit').value = d.unit||'';
+  $('fUse').value = d.usage||''; $('fInd').value = d.indication||''; $('fWarn').value = d.warning||'';
+  $('fCopies').value = 1;
+  renderPreview();
+  $('fQty').focus(); $('fQty').select();
+});
+['fName','fQty','fUnit','fUse','fInd','fWarn','ptName','ptHn','ptAge','ptDate'].forEach(id=>$(id).addEventListener('input',renderPreview));
+
+function clearForm(){ ['drugPick','fName','fQty','fUnit','fUse','fInd','fWarn'].forEach(id=>$(id).value=''); $('fCopies').value=1; renderPreview(); }
+$('clearForm').onclick = clearForm;
+$('addQueue').onclick = ()=>{
+  const it = formItem();
+  if(!it.name){ toast('เลือกหรือพิมพ์ชื่อยาก่อน'); $('drugPick').focus(); return; }
+  st.queue.push(it); save(); renderQueue(); clearForm(); $('drugPick').focus();
+  toast('เพิ่มลงคิวแล้ว');
+};
+function renderQueue(){
+  const q = st.queue;
+  const total = q.reduce((a,b)=>a+(b.copies||1),0);
+  $('qCount').textContent = q.length ? `(${q.length} รายการ, ${total} ดวง)` : '';
+  $('queue').innerHTML = q.length ? q.map((it,i)=>`<li>
+    <div class="q"><div class="n">${esc(it.name)} ${it.qty!==''?'#'+esc(it.qty)+' '+esc(it.unit):''}</div><div class="hint">${esc(it.usage)}</div></div>
+    <input type="number" min="1" value="${it.copies||1}" data-c="${i}" title="จำนวนดวง" style="width:60px">
+    <button class="btn small danger" data-del="${i}">ลบ</button></li>`).join('')
+    : '<li class="empty">ยังไม่มีรายการ เลือกยาด้านซ้ายแล้วกด “เพิ่มลงคิวพิมพ์”</li>';
+}
+$('queue').onclick = e=>{ const i=e.target.dataset.del; if(i!=null){ st.queue.splice(+i,1); save(); renderQueue(); renderPreview(); } };
+$('queue').onchange = e=>{ const i=e.target.dataset.c; if(i!=null){ st.queue[+i].copies=Math.max(1,parseInt(e.target.value)||1); save(); renderQueue(); } };
+$('clearQueue').onclick = ()=>{
+  if(st.queue.length && !confirm('ล้างคิวและชื่อผู้ป่วยเพื่อเริ่มคนถัดไป?')) return;
+  st.queue=[]; save(); ['ptName','ptHn','ptAge'].forEach(id=>$(id).value=''); renderQueue(); renderPreview(); $('ptName').focus();
+};
+
+function applyPageStyle(){
+  const s = st.settings;
+  $('pageStyle').textContent = s.mode==='a4'
+    ? `@media print{@page{size:A4;margin:8mm}#printArea{display:flex!important;flex-wrap:wrap;gap:2mm;align-content:flex-start}#printArea .sticker{outline:.2mm dashed #999;break-inside:avoid}}`
+    : `@media print{@page{size:${s.w}mm ${s.h}mm;margin:0}#printArea .sticker{break-after:page;page-break-after:always}#printArea .sticker:last-child{break-after:auto;page-break-after:auto}}`;
+}
+$('printBtn').onclick = ()=>{
+  let items = st.queue.slice();
+  if(!items.length){
+    const it = formItem();
+    if(!it.name){ toast('ยังไม่มีรายการในคิว'); return; }
+    items=[it];
+  }
+  const pt = patient();
+  let html='';
+  items.forEach(it=>{ for(let k=0;k<(it.copies||1);k++) html+=stickerHTML(it,pt); });
+  const pa = $('printArea');
+  pa.innerHTML = html;
+  pa.style.cssText = 'display:block;position:fixed;left:-10000px;top:0';
+  fitNames(pa);
+  pa.style.cssText = '';
+  applyPageStyle();
+  try{ window.print(); }catch(e){ toast('เบราว์เซอร์ไม่อนุญาตให้พิมพ์ ลองกด Ctrl+P'); }
+};
+window.addEventListener('beforeprint', ()=>{ if(!$('printArea').innerHTML){ $('printBtn').onclick(); } });
+
+/* ---------- drugs tab ---------- */
+const COLMAP = {
+  name:['ชื่อยา','ยา','name','drug','drugname','ชื่อ'],
+  strength:['ความแรง','strength','ขนาด','dose'],
+  unit:['หน่วย','unit'],
+  qty:['จำนวน','qty','quantity','จำนวนเริ่มต้น'],
+  usage:['วิธีใช้','วิธีรับประทาน','usage','sig','วิธีการใช้'],
+  indication:['ข้อบ่งใช้','สรรพคุณ','indication','ข้อบ่งชี้'],
+  warning:['คำเตือน','ข้อควรระวัง','warning','caution'],
+};
+function normKey(k){ return String(k).toLowerCase().replace(/\s|_/g,''); }
+function rowsToDrugs(rows){
+  if(!rows.length) return [];
+  const heads = rows[0].map(normKey);
+  const idx = {};
+  for(const f in COLMAP){ idx[f] = heads.findIndex(h=>COLMAP[f].some(a=>normKey(a)===h)); }
+  if(idx.name<0){ idx.name = 0; }
+  return rows.slice(1).map(r=>{
+    const g = f => idx[f]>=0 ? String(r[idx[f]] ?? '').trim() : '';
+    return {name:g('name'),strength:g('strength'),unit:g('unit'),qty:g('qty'),usage:g('usage'),indication:g('indication'),warning:g('warning')};
+  }).filter(d=>d.name);
+}
+function mergeDrugs(list){
+  if(!list.length){ toast('ไม่พบรายการยา ตรวจหัวคอลัมน์ “ชื่อยา”'); return; }
+  if($('importMode').value==='replace'){ st.drugs = list; }
+  else list.forEach(d=>{ const i = st.drugs.findIndex(x=>label(x)===label(d)); if(i>=0) st.drugs[i]=d; else st.drugs.push(d); });
+  save(); renderDrugs(); renderDatalist();
+  toast(`นำเข้า ${list.length} รายการแล้ว`);
+}
+$('fileIn').onchange = async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  try{
+    if(typeof XLSX==='undefined') throw new Error('noxlsx');
+    const buf = await f.arrayBuffer();
+    const wb = XLSX.read(buf,{type:'array',codepage:65001});
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+    mergeDrugs(rowsToDrugs(rows));
+  }catch(err){ toast('อ่านไฟล์ไม่ได้ ลองบันทึกเป็น .xlsx หรือใช้วิธีคัดลอกวาง'); }
+  e.target.value='';
+};
+$('pasteBtn').onclick = ()=>{
+  const txt = $('pasteIn').value.trim(); if(!txt) return;
+  const rows = txt.split(/\r?\n/).map(l=>l.split('\t'));
+  mergeDrugs(rowsToDrugs(rows)); $('pasteIn').value='';
+};
+
+let editIdx = -1;
+const DF = ['dName','dStr','dUnit','dQty','dUse','dInd','dWarn'];
+const DK = ['name','strength','unit','qty','usage','indication','warning'];
+function clearDrugForm(){ DF.forEach(id=>$(id).value=''); editIdx=-1; $('drugFormTitle').textContent='เพิ่มยาทีละรายการ'; $('saveDrug').textContent='บันทึกยา'; }
+$('cancelDrug').onclick = clearDrugForm;
+$('saveDrug').onclick = ()=>{
+  const d = {}; DF.forEach((id,i)=>d[DK[i]]=$(id).value.trim());
+  if(!d.name){ toast('กรอกชื่อยาก่อน'); $('dName').focus(); return; }
+  if(editIdx>=0) st.drugs[editIdx]=d; else st.drugs.push(d);
+  save(); renderDrugs(); renderDatalist(); clearDrugForm(); toast('บันทึกแล้ว');
+};
+function renderDrugs(){
+  const q = $('dSearch').value.trim().toLowerCase();
+  const rows = st.drugs.map((d,i)=>[d,i]).filter(([d])=>!q || Object.values(d).join(' ').toLowerCase().includes(q));
+  $('dCount').textContent = `(${st.drugs.length} รายการ)`;
+  $('drugTable').innerHTML = rows.length ? rows.map(([d,i])=>`<tr>
+    <td><b>${esc(d.name)}</b></td><td>${esc(d.strength)}</td><td>${esc(d.qty)} ${esc(d.unit)}</td>
+    <td>${esc(d.usage)}</td><td>${esc(d.indication)}</td><td>${esc(d.warning)}</td>
+    <td style="white-space:nowrap"><button class="btn small ghost" data-ed="${i}">แก้ไข</button> <button class="btn small danger" data-rm="${i}">ลบ</button></td></tr>`).join('')
+    : `<tr><td colspan="7" class="empty">ไม่พบรายการ</td></tr>`;
+}
+$('dSearch').oninput = renderDrugs;
+$('drugTable').onclick = e=>{
+  const ed = e.target.dataset.ed, rm = e.target.dataset.rm;
+  if(ed!=null){ const d=st.drugs[+ed]; DF.forEach((id,i)=>$(id).value=d[DK[i]]??''); editIdx=+ed;
+    $('drugFormTitle').textContent='แก้ไขยา: '+d.name; $('saveDrug').textContent='บันทึกการแก้ไข'; $('dName').scrollIntoView({behavior:'smooth',block:'center'}); }
+  if(rm!=null && confirm('ลบ '+st.drugs[+rm].name+' ?')){ st.drugs.splice(+rm,1); save(); renderDrugs(); renderDatalist(); }
+};
+$('resetSample').onclick = ()=>{ if(confirm('ลบรายการทั้งหมดแล้วใช้ยาตัวอย่างแทน?')){ st.drugs=SAMPLE.slice(); save(); renderDrugs(); renderDatalist(); } };
+$('copyAll').onclick = async ()=>{
+  const head = ['ชื่อยา','ความแรง','หน่วย','จำนวน','วิธีใช้','ข้อบ่งใช้','คำเตือน'];
+  const txt = [head, ...st.drugs.map(d=>DK.map(k=>String(d[k]??'').replace(/\t|\n/g,' ')))].map(r=>r.join('\t')).join('\n');
+  try{ await navigator.clipboard.writeText(txt); toast('คัดลอกแล้ว นำไปวางใน Excel ได้เลย'); }
+  catch(e){ $('pasteIn').value = txt; $('pasteIn').closest('details').open = true; toast('คัดลอกอัตโนมัติไม่ได้ ข้อความอยู่ในกล่องวางแล้ว'); }
+};
+
+/* ---------- settings ---------- */
+function loadSettings(){
+  const s = st.settings;
+  $('sUnit').value=s.unit; $('sPlace').value=s.place; $('sPharm').value=s.pharm; $('sPhone').value=s.phone;
+  $('sW').value=s.w; $('sH').value=s.h; $('sTop').value=s.top??10; $('sMode').value=s.mode; $('sFont').value=s.font;
+  const p = `${s.w}x${s.h}`; $('sPreset').value = [...$('sPreset').options].some(o=>o.value===p) ? p : 'custom';
+  $('sChips').value = st.chips.join('\n');
+  $('hdrUnit').textContent = s.unit + (s.place ? ' • ' + s.place : '');
+}
+$('sPreset').onchange = ()=>{ const v=$('sPreset').value; if(v!=='custom'){ const [w,h]=v.split('x'); $('sW').value=w; $('sH').value=h; } };
+$('saveSet').onclick = ()=>{
+  st.settings = {unit:$('sUnit').value.trim()||'หน่วยแพทย์เคลื่อนที่',place:$('sPlace').value.trim(),pharm:$('sPharm').value.trim(),phone:$('sPhone').value.trim(),
+    w:Math.max(20,+$('sW').value||100),h:Math.max(15,+$('sH').value||74),top:Math.min(40,Math.max(0,+$('sTop').value||0)),mode:$('sMode').value,sz:'z100x74',font:Math.min(160,Math.max(60,+$('sFont').value||100))};
+  save(); loadSettings(); renderPreview(); toast('บันทึกการตั้งค่าแล้ว');
+};
+$('saveChips').onclick = ()=>{ st.chips = $('sChips').value.split('\n').map(s=>s.trim()).filter(Boolean); save(); renderChips(); toast('บันทึกข้อความแล้ว'); };
+
+/* ---------- init ---------- */
+$('ptDate').value = todayIso();
+loadSettings(); renderDatalist(); renderChips(); renderQueue(); renderDrugs(); renderPreview();
+})();
+</script>
+</body>
+</html>
